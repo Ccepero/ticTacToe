@@ -1,0 +1,7 @@
+<RCC>
+  <qresource>
+    <file>images/PreferenceIcon.png</file>
+    <file>images/PrefIcon.png</file>
+    <file>images/restart.png</file>
+  </qresource>
+</RCC>
