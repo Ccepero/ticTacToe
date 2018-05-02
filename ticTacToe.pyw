@@ -16,6 +16,8 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QDialog, QMessageBox
 
 logFileNameDefault = 'ticTacToe.log'
 pickleFileNameDefault = ".ticTacToeSavedObjects.pl"
+userPlayingStartingMark = 'X'
+createLogFileDefault = True
 
 class TicTacToe(QMainWindow):
 
@@ -32,13 +34,11 @@ class TicTacToe(QMainWindow):
         uic.loadUi('ticTacToeUI.ui', self)
 
         self.pickleFileName = pickleFileNameDefault
-        self.userPlayingWithMark = self.appSettings.value("startingMarkChoice")
         self.winsCount = 0
         self.lossesCount = 0
         self.gameInProgress = True
         self.messageString = "Welcome! Choose your mark in the preferences to Begin."
         self.board = Board()
-        self.markLabelButton = None
 
         self.buttonList = [self.button1,
                            self.button2,
@@ -52,51 +52,47 @@ class TicTacToe(QMainWindow):
 
         self.restoreSettings()
 
-        if path.exists(self.pickleFileName):
-            self.userPlayingWithMark, self.winsCount, self.lossesCount, self.gameInProgress, self.messageString, self.markLabelButton, self.board, self.game = self.restoreGame()
+        if path.exists(path.join(path.dirname(path.realpath(__file__)), self.pickleFileName)):
+            self.userPlayingWithMark, self.winsCount, self.lossesCount, self.gameInProgress, self.messageString, self.board, self.game = self.restoreGame()
         else:
             self.restartGame()
 
-        self.button1.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(1))
-        self.button2.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(2))
-        self.button3.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(3))
-        self.button4.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(4))
-        self.button5.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(5))
-        self.button6.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(6))
-        self.button7.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(7))
-        self.button8.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(8))
-        self.button9.clicked.connect(lambda: self.dynamicbuttonsClickedHandler(9))
-        self.preferencesSelectButton.clicked.connect(self.preferencesSelectButtonClickedHandler)
+        self.button1.clicked.connect(lambda: self.dynamicButtonsClickedHandler(1))
+        self.button2.clicked.connect(lambda: self.dynamicButtonsClickedHandler(2))
+        self.button3.clicked.connect(lambda: self.dynamicButtonsClickedHandler(3))
+        self.button4.clicked.connect(lambda: self.dynamicButtonsClickedHandler(4))
+        self.button5.clicked.connect(lambda: self.dynamicButtonsClickedHandler(5))
+        self.button6.clicked.connect(lambda: self.dynamicButtonsClickedHandler(6))
+        self.button7.clicked.connect(lambda: self.dynamicButtonsClickedHandler(7))
+        self.button8.clicked.connect(lambda: self.dynamicButtonsClickedHandler(8))
+        self.button9.clicked.connect(lambda: self.dynamicButtonsClickedHandler(9))
+        self.preferencesButton.clicked.connect(self.preferencesSelectButtonClickedHandler)
         self.restartButton.clicked.connect(self.restartButtonClickedHandler)
 
     def updateUI(self):
 
-        for squareNumber in range(1,10):
-            if self.board.isEmpty(squareNumber): #check if the squareNumber is empty
-                self.buttonList[squareNumber - 1].setText("") #if it is make sure it has no mark
-            elif self.board.getMark(squareNumber) == 1: #if the player is X and they mark the square then set the text to X
-                self.buttonList[squareNumber - 1].setText("X")
+        for squareMark in range(0,9):
+            if self.board.isEmpty(squareMark): #check if the squareMark is empty
+                self.buttonList[squareMark - 1].setText("") #if it is make sure it has no mark
+            elif self.board.getMark(squareMark) == 1: #if the player is X and they mark the square then set the text to X
+                self.buttonList[squareMark - 1].setText("X")
+                self.messageString = "You're playing as X"
             else:
-                self.buttonList[squareNumber - 1].setText("O") #if the player is O and they mark the square then set the text to O
+                self.buttonList[squareMark - 1].setText("O") #if the player is O and they mark the square then set the text to O
+                self.messageString = "You're playing as O"
         self.winsLabel.setText(str(self.winsCount))  # set the users winsLabel to whatever their winCount is
-        self.lossesLabel.setText(str(self.lossesCOunt))  # set the users lossesLabel to whatever their lossesCount is
+        self.lossesLabel.setText(str(self.lossesCount))  # set the users lossesLabel to whatever their lossesCount is
         self.resultsLabel.setText(self.messageString) #set the resultsLabel to whatever the messageString is set to
-        if self.userPlayingWithMark == 1: #if the user selects X, set the value to 1
-            self.markLabelButton.setText("X")
-        elif self.userPlayingWithMark == 2: #if the user select O, set the value to 2
-            self.markLabelButton.setText("O")
-        else:
-            self.markLabelButton.setText("-") #otherwise leave the value at None
 
     def restartGame(self):
         self.winsCount = 0
         self.lossesCOunt = 0
         self.messageString = "Welcome! Choose your mark in the preferences to Begin."
-        self.userPlayingWithMark = None #is this correct or should it be markLabelButton
+        self.userPlayingWithMark = userPlayingStartingMark
         self.lossesLabel.setText("")
 
     def saveGame(self):
-        saveItems = (self.userPlayingWithMark, self.winsCount, self.lossesCount, self.gameInProgress, self.messageString, self.markLabelButton, self.board, self.game)
+        saveItems = (self.userPlayingWithMark, self.winsCount, self.lossesCount, self.gameInProgress, self.messageString, self.board, self.game)
         if self.appSettings.contains('pickleFileName'):
             with open(path.join(path.dirname(path.realpath(__file__)), self.appSettings.value('pickleFileName', type=str)), 'wb') as pickleFile:
                 dump(saveItems, pickleFile)
@@ -113,21 +109,20 @@ class TicTacToe(QMainWindow):
 
     def restoreSettings(self):
         if self.appSettings.contains('startingMarkChoice'):
-            self.userPlayingWithMark = self.appSettings.value('startingMarkChoice', type=bool)
+            self.userPlayingWithMark = self.appSettings.value('startingMarkChoice', type=int)
         else:
             self.appSettings.setValue('startingMarkChoice', self.userPlayingWithMark)
         if self.appSettings.contains('createLogFile'):
             self.createLogFile = appSettings.value('createLogFile', type=bool)
         else:
-            self.createLogFile = logFileNameDefault
+            self.createLogFile = createLogFileDefault
             self.appSettings.setValue('createLogFile', self.createLogFile)
-        if self.appSettings.contains('createPickleFile'):
-            self.pickleFileName = appSettings.value('createPickleFile', type=bool)
+        if self.appSettings.contains('pickleFilename'):
+            self.pickleFileName = appSettings.value('pickleFilename', type=str)
         else:
             self.pickleFileName = pickleFileNameDefault
-            self.appSettings.setValue('createPickleFile', self.createPickleFile) #My code is exactly the same as craps and it works there, why not here?
+            self.appSettings.setValue('pickleFilename', self.pickleFileName) #My code is exactly the same as craps and it works there, why not here?
 
-    # set a break point before restore settings and look at all variables and they should have the values that you just changed.
     def saveSettings(self):
         self.logger.info("starting saveSettings")
         if self.appSettings.contains('startingMarkChoice'):
@@ -140,68 +135,84 @@ class TicTacToe(QMainWindow):
             self.createLogFile = logFileNameDefault
             self.appSettings.setValue('createLogFile', self.createLogFile)
         if self.appSettings.contains('createPickleFile'):
-            self.pickleFileName = appSettings.value('createPickleFile', type=bool)
+            self.pickleFileName = appSettings.value('createPickleFiley', type=str)
         else:
             self.pickleFileName = pickleFileNameDefault
             self.appSettings.setValue('createPickleFile', self.createPickleFile)
 
-    def setUserPlayerWithMark(self, playerNumber):
-        if playerNumber == 1 or playerNumber == 2:
-            self.userPlayingWithMark = playerNumber
+    def setUserPlayerWithMark(self, playerMark):
+        if playerMark == 'X' or playerMark == 'O':
+            self.userPlayingStartingMark = playerMark
         else:
-            self.logger.error("invalid playerNumber in setUserPlayerNumber: {0}".format(playerNumber))
+            self.logger.error("invalid playerMark in setUserPlayerMark {0}".format(playerMark))
 
     def clearUserPlayerWithMark(self):
-        self.userPlayingWithMark = self.startingMarkChoice
+        self.userPlayingStartingMark = self.startingMarkChoice
 
     def getUserPlayingWithMark(self):
         return self.userPlayingWithMark
 
-    def playSquare(self, currentPlayerNumber, squareToPlay = -1): #the game
-        self.logger.info("entering playSquare with playNumber {0} and squareNumber {1}".format(currentPlayerNumber, squareToPlay))
-        if currentPlayerNumber != self.userPlayingWithMark(): #If the human is not equal to the userPlayingWithMark
-            if self.game.checkForBlock(currentPlayerNumber): #if the player finds any move where they can be blocked/loose
-                self.logger.info(self.game.getBlockList())
-                chosenSquare = self.game.block() #block that spot
-            elif self.game.checkForBlock(self.game.getOpposingPlayer()): #if not, check the game to see if the opponent can be blocked (create)
-                self.logger.info(self.game.getBlockList()) #(create)
-                chosenSquare = self.game.block() #block the opponent (create)
-            else:
-                chosenSquare = self.game.selectSquare() #otherwise pick any square. (create)
+    # I want to switch the playerMark to X and O instead of 1 and 2 so how might I do that and how will my code need to change? How come my squares aren't changing to X/O when I click on them? instead they just blow up. (look at line 186, 215, and the objects file.)
+
+    def playUsersTurn(self, squareToPlay):
+        squareToPlay = userPlayingStartingMark
+        self.board.setMark(squareToPlay)
+        for squareToPlay in self.board.spacesAvailable:
+            self.board.spacesAvailable = self.board.spacesAvailable - squareToPlay
+        return squareToPlay
+
+
+    def getWon(self):
+        executeWinnerIsUser = False
+        if self.board.winningCombinations(userPlayingStartingMark):
+            executeWinnerIsUser = True
+            self.winsCount += 1
         else:
-            chosenSquare = squareToPlay
-            self.game.randomNumber.setToggel(squareToPlay) #otherwise pick any square according to numGenerator (create)
+            executeWinnerIsUser = False
+            self.lossesCount += 1
+        return executeWinnerIsUser
 
-        row = (((chosenSquare - 1) // self.game.getSize()) + 1) #set the row
-        column = ((chosenSquare + 2) % self.game.getSize()) + 1 #set the column
-        self.game.mark(row, column) #fill in the gameBoard
 
-        if self.game.getWon(): #if anyone wins (create)
-            if self.game.getWinner() == 1: #find which player is the winner: if its X (create)
-                self.setMessage("X won!")  #set the resultsLabel to X won
-                if self.userPlayingWithMark() == 1: #if the userPlayingWithMark is the human and they won
+    def playSquare(self, currentPlayerMark, squareToPlay = -1): #the game
+        self.logger.info("entering playSquare with playNumber {0} and squareMark {1}".format(currentPlayerMark, squareToPlay))
+        if currentPlayerMark != self.getUserPlayingWithMark(): #If its the computers turn
+            if self.board.block(currentPlayerMark): #check to see if it can block human
+                #self.logger.info(self.game.getBlockList())
+                chosenSquare = self.board.block() #block that spot
+                return chosenSquare
+            else:
+                chosenSquare = self.board.selectSquare() #otherwise pick a square that can get you a winning combination??? How might I code this??
+        else:
+            chosenSquare = self.board.getAvailableRandomSquare() #Idk what to put here ?????
+        self.game.setMark(chosenSquare) #fill in the gameBoard with the choseSquares
+        self.getWon()
+
+        if self.getWon(): #if there is a win
+            if self.getWon() == userPlayingStartingMark: #If the HumansMark won
+                self.messageString = ("You won!")  #set the resultsLabel to you won
+                if self.userPlayingWithMark() == 'X': #if the humansMark is X
                     self.winsCount += 1 #bring up the userWinsCounter by 1
                 else:
                     self.lossesCount+= 1 #otherwise, computer wins
-                    self.logger.info("X won!") #print computer won
+                    self.logger.info("The Computer won!")
                 self.updateUI()
 
             else:
-                self.setMessage("O won!") #otherwise all the same applies but with O instead of X
-                if self.userPlayingWithMark() == 2:
+                self.messageString = ("You won!")
+                if self.getUserPlayingWithMark() == 'O':
                     self.winsCount += 1
                 else:
                     self.lossesCount += 1
-                    self.logger.info("O won!")
+                    self.logger.info("The Computer won!")
                 self.updateUI()
                 self.logger.info("Game Over")
             self.gameInProgress = False #sets the game to stop
             self.restartTimer = QTimer #restarts the game
             self.restartTime.singleShot(2500, self.restartGame)  #this calls the restarts the function specifically after restartGame is triggered.
-        elif self.game.spacesAvailable(): #See if the the game has available squares
-            self.game.toggleCurrentPlayer() #this ensures that turns are taken one after the other (create)
+        elif self.board.spacesAvailable: #See if the the game has anymore available squares
+            pass #idk what to put here?????????
         else: #if not and nobody has won:
-            self.setMessage("Game was a tie!") #its a tie
+            self.messageString = ("Game was a tie!")
             self.logger.debug(self.game.displayGame)
             self.logger.info("Game was a tie!")
             self.gameInProgress = False #close the game
@@ -209,21 +220,21 @@ class TicTacToe(QMainWindow):
             self.restartTimer = QTimer() #restart the game
             self.restartTimer.singleShot(2500, self.restartGame)
 
-        if self.gameInProgress and currentPlayerNumber == self.userPlayingWithMark() and not self.game.getWon(): #if the game is in progress and it is the humans turn and they have not won:
+        if self.gameInProgress and currentPlayerMark == self.userPlayingWithMark() and not self.game.getWon(): #if the game is in progress and it is the humans turn and they have not won:
             self.playSquare(self.game.getCurrentPlayer()) #get whatever square they fill in and updateUI
 
         self.updateUI()
 
     def dynamicButtonsClickedHandler (self, buttonNumber):
         self.logger.debug("Button %i was clicked" % buttonNumber)
+        print("Button %i was clicked" % buttonNumber)
 
-        if self.game.squareIsEmpty(buttonNumber):
-            self.setMessage("Square %i was clicked" % buttonNumber)
-            self.updateUI()
-            self.playSquare(self.userPlayingWithMark(), buttonNumber)
+        if self.board.isEmpty(buttonNumber):
+            self.messageString = "Square %i was clicked" % buttonNumber
+            self.playSquare(self.getUserPlayingWithMark(), buttonNumber)
         else:
-            self.setMessage("Square %i has been used already" % buttonNumber)
-            self.updateUI()
+            self.messageString("Square %i has been used already" % buttonNumber)
+        self.updateUI()
 
     @pyqtSlot()  # user is requesting preferences editing dialog box.
     def preferencesSelectButtonClickedHandler(self):
@@ -277,10 +288,10 @@ class PreferencesDialog(QDialog):
         self.updateUI()
 
     def radioButtonXStateChanged(self):
-        self.startingMarkChoice = 1
+        self.startingMarkChoice = 'X'
 
     def radioButtonOStateChanged(self):
-        self.startingMarkChoice = 2
+        self.startingMarkChoice = 'O'
 
     def createLogFileChanged(self):
         self.createLogFile = self.createLogFileCheckBox
