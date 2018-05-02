@@ -2,8 +2,6 @@
 __author__ = 'Cindalis Cepero'
 import random
 
-# randomNumberGen = random.randint(0, 9) - 1
-
 class Square(object): #the squares
     def __init__(self):
         self.mark = -1 #this set the squares so that you can use 1-9 instead of 0-9
@@ -17,8 +15,8 @@ class Square(object): #the squares
     def getMark(self): #setter for mark
         return self.mark #return whatever mark the user chooses
 
-    def setMark(self, playNumber): #getter for mark
-        self.mark = playNumber #this sets the variables X and O  to numbers 1 and 2 so its easier to reffer to.
+    def setMark(self, playMark): #getter for mark
+        self.mark = playMark
 
 class Board(object): #the board
     def __init__(self, size = 3): #size is a 3 x 3 board
@@ -41,7 +39,7 @@ class Board(object): #the board
                                     (2, 5, 8),
                                     (0, 4, 8),
                                     (2, 4, 6)]
-    def hasWon(self):
+    def getWon(self):
         for winningResult in self.winningCombinations:
             if self.gameBoard[winningResult[0]].getMark == self.gameBoard[winningResult[1]].getMark and self.gameBoard[winningResult[1]].getMark == self.gameBoard[winningResult[2]].getMark:
                 self.won = True
@@ -63,14 +61,38 @@ class Board(object): #the board
 
     def getAvailableRandomSquare(self):
         chosenSquare = random.choice(self.spacesAvailable)
-        del self.spacesAvailable[self.spacesAvailable.index(chosenSquare)]
+        # del self.spacesAvailable[self.spacesAvailable.index(chosenSquare)]
         return chosenSquare
 
-    # def isEmpty(self, squareNumber):
-    #     return self.gameBoard[squareNumber].isEmpty()
+    def isEmpty(self, squareNumber):
+        return self.gameBoard[squareNumber].isEmpty()
 
-    # def getMark(self, squareNumber):
-    #     return self.gameBoard[squareNumber].getMark()
+    def getMark(self, squareNumber):
+        return self.gameBoard[squareNumber].getMark()
+
+    def setMark(self, chosenSquare, playerNumber):
+        if self.isEmpty(chosenSquare):
+            self.gameBoard[chosenSquare].setMark(playerNumber)
+            del self.spacesAvailable[self.spacesAvailable.index(chosenSquare)]
+
+    def block(self, chosenSquare):
+        for squares in self.winningCombinations:
+            squareContents = (self.gameBoard[squares[0]].getMark() + self.gameBoard[squares[0]].getMark() + self.gameBoard[squares[0]].getMark())
+            if sum(squareContents) %2 == 1 and squareContents.count(0) == 1:
+                zeroPosition = squareContents.index(0)
+                if self.currentPlayer == 1:
+                    self.block(chosenSquare=4)
+                else:
+                    self.block(chosenSquare=2)
+                #check to see if its a 2 or 4. if current player is 1, then its a block if you got a 4, otherwise its a block if your have a 2.
+                return squares[zeroPosition]
+
+
+        #%2 == 1 odd
+        #%2== 0 even
+
+
+
 
 
 
